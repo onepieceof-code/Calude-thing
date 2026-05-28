@@ -1,0 +1,5 @@
+applications:
+  - name: simple_black_board
+    memory: 128M
+    buildpacks:
+      - nodejs_buildpack
