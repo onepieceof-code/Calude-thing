@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MCQ Quiz App</title>
+
+  <!-- A simple, clean Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ===== Basic reset so spacing is predictable ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* ===== Page styling ===== */
+    body {
+      font-family: "Poppins", sans-serif;
+      background: #f4f6fb;
+      color: #1f2430;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    /* ===== The main card that holds everything ===== */
+    .card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 520px;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    /* ===== App title ===== */
+    .title {
+      text-align: center;
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #7a8194;
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+
+    /* ===== Upload section ===== */
+    .upload-box {
+      border: 2px dashed #c7cdda;
+      border-radius: 12px;
+      padding: 28px 16px;
+      text-align: center;
+    }
+    .upload-box p {
+      color: #7a8194;
+      margin-bottom: 14px;
+      font-size: 14px;
+    }
+    /* Hide the default ugly file input and use a styled label instead */
+    #fileInput {
+      display: none;
+    }
+    .upload-label {
+      display: inline-block;
+      background: #4f6ef7;
+      color: #fff;
+      padding: 12px 22px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .upload-label:hover {
+      background: #3c5af0;
+    }
+
+    /* ===== Top row: progress text + timer ===== */
+    .quiz-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .progress {
+      font-size: 14px;
+      color: #7a8194;
+      font-weight: 500;
+    }
+    /* ===== Countdown timer ===== */
+    .timer {
+      font-size: 14px;
+      font-weight: 600;
+      color: #4f6ef7;
+      background: #eef1fe;
+      padding: 4px 12px;
+      border-radius: 999px;
+    }
+    /* Turn red when time is running low */
+    .timer.low {
+      color: #9c2c2c;
+      background: #fdeaea;
+    }
+
+    /* ===== The question text ===== */
+    .question {
+      font-size: 19px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+
+    /* ===== Option buttons ===== */
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .option {
+      text-align: left;
+      padding: 14px 16px;
+      border: 2px solid #e3e7f0;
+      border-radius: 10px;
+      background: #fff;
+      font-size: 15px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border 0.2s, background 0.2s;
+    }
+    .option:hover {
+      border-color: #4f6ef7;
+    }
+    /* Colors shown after the user picks an answer */
+    .option.correct {
+      background: #e6f7ec;
+      border-color: #36b37e;
+      color: #1b6b46;
+    }
+    .option.wrong {
+      background: #fdeaea;
+      border-color: #e05656;
+      color: #9c2c2c;
+    }
+    /* Disabled buttons should not look clickable */
+    .option:disabled {
+      cursor: default;
+    }
+
+    /* ===== Next / Skip buttons ===== */
+    .next-btn {
+      margin-top: 22px;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: #4f6ef7;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .next-btn:hover {
+      background: #3c5af0;
+    }
+    /* Skip button: a lighter, secondary-looking button */
+    .skip-btn {
+      margin-top: 22px;
+      width: 100%;
+      padding: 14px;
+      border: 2px solid #c7cdda;
+      border-radius: 10px;
+      background: #fff;
+      color: #7a8194;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border 0.2s, color 0.2s;
+    }
+    .skip-btn:hover {
+      border-color: #4f6ef7;
+      color: #4f6ef7;
+    }
+
+    /* ===== Final score screen ===== */
+    .result {
+      text-align: center;
+    }
+    .result h2 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+    .score-number {
+      font-size: 46px;
+      font-weight: 700;
+      color: #4f6ef7;
+      margin: 10px 0;
+    }
+    .result p {
+      color: #7a8194;
+      margin-bottom: 22px;
+    }
+
+    /* ===== Review section (skipped + wrong answers) ===== */
+    .review {
+      text-align: left;
+      margin-bottom: 22px;
+    }
+    .review h3 {
+      font-size: 16px;
+      margin-bottom: 12px;
+      color: #1f2430;
+    }
+    .review-item {
+      border: 2px solid #e3e7f0;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+    .review-item .rq {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+    .review-item .tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+    .tag.skipped {
+      background: #fff4e0;
+      color: #9c6a1c;
+    }
+    .tag.wrong-tag {
+      background: #fdeaea;
+      color: #9c2c2c;
+    }
+    .review-item .line {
+      font-size: 13px;
+      color: #7a8194;
+      margin-top: 2px;
+    }
+    .review-item .line b {
+      color: #1f2430;
+    }
+
+    /* Helper class to hide sections we are not using right now */
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <!-- App title (always shown) -->
+    <h1 class="title">📘</h1>
+    <p class="subtitle">Upload a JSON file to start the quiz</p>
+
+    <!-- ===== SECTION 1: Upload screen ===== -->
+    <div id="uploadScreen" class="upload-box">
+      <p>Choose a .json file with your quiz questions</p>
+      <label for="fileInput" class="upload-label">Upload JSON File</label>
+      <input type="file" id="fileInput" accept=".json" />
+    </div>
+
+    <!-- ===== SECTION 2: Quiz screen (hidden at start) ===== -->
+    <div id="quizScreen" class="hidden">
+      <div class="quiz-top">
+        <p id="progress" class="progress"></p>
+        <span id="timer" class="timer"></span>
+      </div>
+      <h2 id="question" class="question"></h2>
+      <div id="options" class="options"></div>
+      <button id="skipBtn" class="skip-btn">Skip</button>
+      <button id="nextBtn" class="next-btn hidden">Next</button>
+    </div>
+
+    <!-- ===== SECTION 3: Result screen (hidden at start) ===== -->
+    <div id="resultScreen" class="result hidden">
+      <h2>🎉 Quiz Finished!</h2>
+      <div id="scoreNumber" class="score-number"></div>
+      <p id="scoreText"></p>
+      <div id="review" class="review"></div>
+      <button id="restartBtn" class="next-btn">Restart Quiz</button>
+    </div>
+  </div>
+
+  <script>
+    /* ============================================================
+       MCQ QUIZ APP - Beginner-friendly JavaScript
+       Read the comments to understand what each part does.
+       ============================================================ */
+
+    /* ---- 1. Grab the HTML elements we need ---- */
+    var fileInput = document.getElementById("fileInput");
+    var uploadScreen = document.getElementById("uploadScreen");
+    var quizScreen = document.getElementById("quizScreen");
+    var resultScreen = document.getElementById("resultScreen");
+
+    var progressText = document.getElementById("progress");
+    var questionText = document.getElementById("question");
+    var optionsBox = document.getElementById("options");
+    var nextBtn = document.getElementById("nextBtn");
+    var skipBtn = document.getElementById("skipBtn");
+    var timerEl = document.getElementById("timer");
+
+    var scoreNumber = document.getElementById("scoreNumber");
+    var scoreText = document.getElementById("scoreText");
+    var reviewBox = document.getElementById("review");
+    var restartBtn = document.getElementById("restartBtn");
+
+    /* ---- 2. Variables to keep track of the quiz ---- */
+    var questions = [];      // all the questions from the JSON file
+    var currentIndex = 0;    // which question we are on (starts at 0)
+    var score = 0;           // how many correct answers so far
+    var skipped = [];        // questions the user skipped
+    var wrongAnswers = [];   // questions answered wrong (with the chosen answer)
+    var timerId = null;      // id of the countdown interval (so we can stop it)
+    var remainingSeconds = 0;// seconds left for the whole exam
+    var answered = false;    // has the current question been answered yet?
+
+    var SECONDS_PER_QUESTION = 60; // 1 minute per question, added to one total budget
+
+    /* ---- 3. When the user picks a file, read it ---- */
+    fileInput.addEventListener("change", function (event) {
+      var file = event.target.files[0]; // the file the user chose
+      if (!file) return; // do nothing if no file selected
+
+      var reader = new FileReader();
+
+      // This runs after the file has been read
+      reader.onload = function () {
+        try {
+          // Turn the text from the file into a JavaScript array
+          var data = JSON.parse(reader.result);
+
+          // Make sure the data is a non-empty array
+          if (!Array.isArray(data) || data.length === 0) {
+            alert("Invalid file: the JSON must be a list of questions.");
+            return;
+          }
+
+          // Save the questions and start the quiz
+          questions = data;
+          startQuiz();
+        } catch (error) {
+          // If the file is not valid JSON, show an alert
+          alert("Invalid JSON file. Please upload a correctly formatted file.");
+        }
+      };
+
+      reader.readAsText(file); // start reading the file as text
+    });
+
+    /* ---- 4. Start (or restart) the quiz ---- */
+    function startQuiz() {
+      currentIndex = 0;
+      score = 0;
+      skipped = [];        // forget any skips from a previous run
+      wrongAnswers = [];   // forget any wrong answers from a previous run
+
+      // Show the quiz screen, hide the others
+      uploadScreen.classList.add("hidden");
+      resultScreen.classList.add("hidden");
+      quizScreen.classList.remove("hidden");
+
+      startTimer(); // one shared countdown for the whole exam
+      showQuestion();
+    }
+
+    /* ---- 4b. Total exam timer: 1 minute per question ---- */
+    function startTimer() {
+      stopTimer(); // clear any leftover timer from a previous run
+
+      // Total budget = 60s * number of questions (no per-question limit)
+      remainingSeconds = questions.length * SECONDS_PER_QUESTION;
+      updateTimerDisplay();
+
+      timerId = setInterval(function () {
+        remainingSeconds = remainingSeconds - 1;
+        updateTimerDisplay();
+
+        if (remainingSeconds <= 0) {
+          timeUp(); // out of time, end the quiz
+        }
+      }, 1000);
+    }
+
+    // Stop the countdown (used when the quiz ends or restarts)
+    function stopTimer() {
+      if (timerId !== null) {
+        clearInterval(timerId);
+        timerId = null;
+      }
+    }
+
+    // Show the remaining time as mm:ss, and warn when it gets low
+    function updateTimerDisplay() {
+      var safe = remainingSeconds > 0 ? remainingSeconds : 0;
+      var minutes = Math.floor(safe / 60);
+      var seconds = safe % 60;
+      // Pad seconds to two digits, e.g. 5 -> "05"
+      timerEl.textContent = minutes + ":" + (seconds < 10 ? "0" + seconds : seconds);
+
+      // Highlight in red during the final 30 seconds
+      if (safe <= 30) {
+        timerEl.classList.add("low");
+      } else {
+        timerEl.classList.remove("low");
+      }
+    }
+
+    // Called when the whole-exam timer reaches zero
+    function timeUp() {
+      stopTimer();
+
+      // Any questions not yet answered count as skipped.
+      // Skip the current one if it was already answered (just awaiting Next).
+      var start = answered ? currentIndex + 1 : currentIndex;
+      for (var i = start; i < questions.length; i++) {
+        skipped.push({
+          question: questions[i].question,
+          answer: questions[i].answer
+        });
+      }
+
+      showResult();
+    }
+
+    /* ---- 5. Show the current question and its options ---- */
+    function showQuestion() {
+      answered = false; // fresh question, not answered yet
+      nextBtn.classList.add("hidden"); // hide Next until an answer is picked
+      skipBtn.classList.remove("hidden"); // Skip is available until answered
+
+      var current = questions[currentIndex];
+
+      // Update the progress text, e.g. "Question 1 of 10"
+      progressText.textContent =
+        "Question " + (currentIndex + 1) + " of " + questions.length;
+
+      // Show the question text
+      questionText.textContent = current.question;
+
+      // Clear any old option buttons
+      optionsBox.innerHTML = "";
+
+      // Create one button for each option
+      current.options.forEach(function (optionText) {
+        var button = document.createElement("button");
+        button.textContent = optionText;
+        button.className = "option";
+
+        // When this option is clicked, check the answer
+        button.addEventListener("click", function () {
+          checkAnswer(button, optionText, current.answer);
+        });
+
+        optionsBox.appendChild(button);
+      });
+    }
+
+    /* ---- 6. Check if the chosen answer is correct ---- */
+    function checkAnswer(clickedButton, chosen, correctAnswer) {
+      // Get all option buttons currently shown
+      var allButtons = optionsBox.querySelectorAll(".option");
+
+      // Go through each button to color and disable it
+      allButtons.forEach(function (button) {
+        button.disabled = true; // no more clicking allowed
+
+        // Always show the correct answer in green
+        if (button.textContent === correctAnswer) {
+          button.classList.add("correct");
+        }
+      });
+
+      // If the chosen answer was wrong, color it red and remember it
+      if (chosen !== correctAnswer) {
+        clickedButton.classList.add("wrong");
+        wrongAnswers.push({
+          question: questions[currentIndex].question,
+          chosen: chosen,
+          answer: correctAnswer
+        });
+      } else {
+        score = score + 1; // correct! add one point
+      }
+
+      // Answer locked in: hide Skip, show Next so the user can continue
+      answered = true;
+      skipBtn.classList.add("hidden");
+      nextBtn.classList.remove("hidden");
+    }
+
+    /* ---- 7. Move to the next question (or show results) ---- */
+    function goToNext() {
+      currentIndex = currentIndex + 1;
+
+      if (currentIndex < questions.length) {
+        showQuestion(); // more questions left
+      } else {
+        showResult(); // no more questions, show the score
+      }
+    }
+
+    nextBtn.addEventListener("click", goToNext);
+
+    /* ---- 7b. Skip the current question without answering ---- */
+    skipBtn.addEventListener("click", function () {
+      var current = questions[currentIndex];
+      skipped.push({
+        question: current.question,
+        answer: current.answer
+      });
+      goToNext();
+    });
+
+    /* ---- 8. Show the final score ---- */
+    function showResult() {
+      stopTimer(); // exam is over, stop the countdown
+
+      quizScreen.classList.add("hidden");
+      resultScreen.classList.remove("hidden");
+
+      scoreNumber.textContent = score + " / " + questions.length;
+      scoreText.textContent =
+        "You answered " + score + " out of " + questions.length + " correctly.";
+
+      buildReview();
+    }
+
+    /* ---- 8b. Build the review list of wrong + skipped questions ---- */
+    function buildReview() {
+      reviewBox.innerHTML = ""; // clear any review from a previous run
+
+      // Nothing to review = perfect run with no skips
+      if (wrongAnswers.length === 0 && skipped.length === 0) {
+        return;
+      }
+
+      // --- Wrong answers ---
+      if (wrongAnswers.length > 0) {
+        var wrongHeading = document.createElement("h3");
+        wrongHeading.textContent = "Wrong answers (" + wrongAnswers.length + ")";
+        reviewBox.appendChild(wrongHeading);
+
+        wrongAnswers.forEach(function (item) {
+          var div = document.createElement("div");
+          div.className = "review-item";
+          div.innerHTML =
+            '<span class="tag wrong-tag">Wrong</span>' +
+            '<div class="rq"></div>' +
+            '<div class="line">Your answer: <b class="ya"></b></div>' +
+            '<div class="line">Correct answer: <b class="ca"></b></div>';
+          // Use textContent so question/answer text can't inject HTML
+          div.querySelector(".rq").textContent = item.question;
+          div.querySelector(".ya").textContent = item.chosen;
+          div.querySelector(".ca").textContent = item.answer;
+          reviewBox.appendChild(div);
+        });
+      }
+
+      // --- Skipped questions ---
+      if (skipped.length > 0) {
+        var skipHeading = document.createElement("h3");
+        skipHeading.textContent = "Skipped questions (" + skipped.length + ")";
+        reviewBox.appendChild(skipHeading);
+
+        skipped.forEach(function (item) {
+          var div = document.createElement("div");
+          div.className = "review-item";
+          div.innerHTML =
+            '<span class="tag skipped">Skipped</span>' +
+            '<div class="rq"></div>' +
+            '<div class="line">Correct answer: <b class="ca"></b></div>';
+          div.querySelector(".rq").textContent = item.question;
+          div.querySelector(".ca").textContent = item.answer;
+          reviewBox.appendChild(div);
+        });
+      }
+    }
+
+    /* ---- 9. Restart button goes back to the upload screen ---- */
+    restartBtn.addEventListener("click", function () {
+      resultScreen.classList.add("hidden");
+      uploadScreen.classList.remove("hidden");
+      fileInput.value = ""; // clear the old file so a new one can be picked
+    });
+  </script>
+</body>
+</html>
