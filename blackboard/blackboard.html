@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Blackboard</title>
+  <link rel="icon" type="image/svg+xml" href="blackboard_favicon.svg">
 
   <style>
     /* ============================================================
@@ -157,6 +158,16 @@
       </svg>
     </button>
 
+    <button class="tool" id="textBtn" title="Text (click to place caret, then type)">
+      <!-- text icon -->
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 6V4h14v2" />
+        <path d="M12 4v16" />
+        <path d="M9 20h6" />
+      </svg>
+    </button>
+
     <button class="shape" data-shape="square" draggable="true" title="Drag onto board">
       <!-- square stamp -->
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -208,11 +219,22 @@
     const STAMP_SIZE  = 60;         // dropped shape size (px)
     const STAMP_LINE  = 3;          // dropped shape outline thickness
     const UNDO_LIMIT  = 20;         // max number of undo snapshots kept
+    const TEXT_SIZE   = 26;         // text-tool font size (px)
+    const TEXT_FONT   = `${TEXT_SIZE}px sans-serif`;
+    const LINE_HEIGHT = TEXT_SIZE * 1.3;
 
-    let currentTool = "pencil";     // "pencil" or "eraser"
+    let currentTool = "pencil";     // "pencil", "eraser", or "text"
     let drawing = false;            // is the mouse currently held down?
     let lastX = 0, lastY = 0;       // last known pointer position
     const historyStack = [];        // snapshots taken before each action
+
+    // Text-tool state: when the user clicks with the text tool, a caret is
+    // "placed" on the board and subsequent keystrokes are rendered from there.
+    let textActive   = false;       // is a text caret currently placed?
+    let textBaseSnap = null;        // canvas snapshot at the moment the caret was placed
+    let textStartX   = 0;
+    let textStartY   = 0;
+    let textBuffer   = "";          // characters typed since the caret was placed
 
     /* ============================================================
        5. CANVAS SIZING (and crisp rendering on high-DPI screens)
@@ -221,6 +243,10 @@
        simple CSS pixel coordinates. Existing art is preserved.
        ============================================================ */
     function resizeCanvas() {
+      // If the user is mid-typing, bake the text into the canvas first so it
+      // survives the resize (and so textBaseSnap from the old size is dropped).
+      commitText();
+
       // Take a snapshot of whatever is currently drawn
       const snapshot = document.createElement("canvas");
       snapshot.width = canvas.width;
@@ -280,6 +306,12 @@
        fast, and makes freehand drawing feel natural.
        ============================================================ */
     function startDraw(e) {
+      // Text tool: clicks place a caret rather than starting a stroke.
+      if (currentTool === "text") {
+        placeCaret(e.offsetX, e.offsetY);
+        return;
+      }
+
       drawing = true;
       pushHistory();        // snapshot BEFORE this stroke, for undo
       applyBrush();
@@ -328,27 +360,38 @@
        ============================================================ */
     const pencilBtn = document.getElementById("pencilBtn");
     const eraserBtn = document.getElementById("eraserBtn");
+    const textBtn   = document.getElementById("textBtn");
     const clearBtn  = document.getElementById("clearBtn");
 
     function selectTool(tool) {
+      // Switching tools ends any in-progress text session (text stays on the board).
+      commitText();
       currentTool = tool;
       // Update which button looks "active"
       pencilBtn.classList.toggle("active", tool === "pencil");
       eraserBtn.classList.toggle("active", tool === "eraser");
+      textBtn.classList.toggle("active", tool === "text");
+      // Cursor: I-beam for text tool, crosshair for the drawing tools.
+      canvas.style.cursor = tool === "text" ? "text" : "crosshair";
     }
 
     pencilBtn.addEventListener("click", () => selectTool("pencil"));
     eraserBtn.addEventListener("click", () => selectTool("eraser"));
+    textBtn.addEventListener("click", () => selectTool("text"));
 
     // Clear Board: wipe everything back to the empty chalkboard
     clearBtn.addEventListener("click", () => {
+      commitText();         // bake any in-progress text in before clearing
       pushHistory();        // so "undo" can restore the board after a clear
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
     });
 
     // Undo button: restore the snapshot taken before the last action
     const undoBtn = document.getElementById("undoBtn");
-    undoBtn.addEventListener("click", undo);
+    undoBtn.addEventListener("click", () => {
+      commitText();
+      undo();
+    });
 
     /* ============================================================
        9. EVENT WIRING
@@ -405,6 +448,7 @@
       e.preventDefault();
       const shape = e.dataTransfer.getData("text/shape");
       if (shape) {
+        commitText();     // bake any in-progress text into the canvas first
         pushHistory();    // snapshot BEFORE the stamp, for undo
         stampShape(shape, e.offsetX, e.offsetY);
       }
@@ -427,6 +471,102 @@
       const snap = historyStack.pop();
       if (snap) ctx.putImageData(snap, 0, 0);
     }
+
+    /* ============================================================
+       12. TEXT INPUT
+       The text tool places a caret on the board; subsequent keystrokes
+       are drawn from that caret. The trick: we snapshot the canvas
+       when the caret is placed, then on each keystroke restore that
+       snapshot and re-render the whole text buffer. This makes
+       Backspace trivial (drop the last char, redraw) and leaves the
+       rest of the board untouched.
+       ============================================================ */
+    function renderText(showCaret) {
+      if (!textBaseSnap) return;
+      // putImageData ignores the dpr transform — exactly what we want for
+      // pixel-perfect restoration of the pre-text canvas state.
+      ctx.putImageData(textBaseSnap, 0, 0);
+
+      ctx.save();
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = CHALK_COLOR;
+      ctx.font = TEXT_FONT;
+      ctx.textBaseline = "top";
+
+      const lines = textBuffer.split("\n");
+      for (let i = 0; i < lines.length; i++) {
+        ctx.fillText(lines[i], textStartX, textStartY + i * LINE_HEIGHT);
+      }
+
+      if (showCaret) {
+        const lastLine = lines[lines.length - 1];
+        const caretX = textStartX + ctx.measureText(lastLine).width;
+        const caretY = textStartY + (lines.length - 1) * LINE_HEIGHT;
+        ctx.fillRect(caretX, caretY, 2, TEXT_SIZE);
+      }
+      ctx.restore();
+    }
+
+    function placeCaret(x, y) {
+      // Clicking again finishes any prior text session before starting a new one.
+      commitText();
+      pushHistory();   // one undo step covers this whole text entry
+      textBaseSnap = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      textStartX = x;
+      textStartY = y;
+      textBuffer = "";
+      textActive = true;
+      renderText(true);
+    }
+
+    function commitText() {
+      if (!textActive) return;
+      // Re-render without the caret indicator so it isn't baked into the canvas.
+      renderText(false);
+      textActive = false;
+      textBaseSnap = null;
+      textBuffer = "";
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if (!textActive) return;
+
+      if (e.key === "Escape") {
+        // Cancel: restore the pre-caret board and pop the unused undo snapshot
+        // so this aborted entry doesn't become an undo step.
+        ctx.putImageData(textBaseSnap, 0, 0);
+        historyStack.pop();
+        textActive = false;
+        textBaseSnap = null;
+        textBuffer = "";
+        e.preventDefault();
+        return;
+      }
+
+      if (e.key === "Backspace") {
+        if (textBuffer.length > 0) {
+          textBuffer = textBuffer.slice(0, -1);
+          renderText(true);
+        }
+        e.preventDefault();
+        return;
+      }
+
+      if (e.key === "Enter") {
+        textBuffer += "\n";
+        renderText(true);
+        e.preventDefault();
+        return;
+      }
+
+      // Only accept printable single-character keys; ignore Ctrl/Cmd/Alt combos
+      // so browser shortcuts still work.
+      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        textBuffer += e.key;
+        renderText(true);
+        e.preventDefault();
+      }
+    });
 
     // Kick everything off
     resizeCanvas();
