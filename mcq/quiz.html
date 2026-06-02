@@ -22,8 +22,16 @@
     /* ===== Page styling ===== */
     body {
       font-family: "Poppins", sans-serif;
-      background: #f4f6fb;
-      color: #1f2430;
+      /* Dark base colour with a subtle pattern layered on top.
+         - a soft off-centre glow (radial-gradient)
+         - a faint dot grid (the two repeating radial-gradients) */
+      background-color: #0d0f14;
+      background-image:
+        radial-gradient(circle at 20% 0%, rgba(79, 110, 247, 0.18), transparent 45%),
+        radial-gradient(circle at 80% 100%, rgba(54, 179, 126, 0.12), transparent 45%),
+        radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+      background-size: auto, auto, 22px 22px;
+      color: #e6e8ef;
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -33,12 +41,13 @@
 
     /* ===== The main card that holds everything ===== */
     .card {
-      background: #ffffff;
+      background: #161922;
       width: 100%;
       max-width: 520px;
       border-radius: 16px;
       padding: 28px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
     }
 
     /* ===== App title ===== */
@@ -50,20 +59,20 @@
     }
     .subtitle {
       text-align: center;
-      color: #7a8194;
+      color: #9aa1b4;
       font-size: 14px;
       margin-bottom: 24px;
     }
 
     /* ===== Upload section ===== */
     .upload-box {
-      border: 2px dashed #c7cdda;
+      border: 2px dashed #3a3f4d;
       border-radius: 12px;
       padding: 28px 16px;
       text-align: center;
     }
     .upload-box p {
-      color: #7a8194;
+      color: #9aa1b4;
       margin-bottom: 14px;
       font-size: 14px;
     }
@@ -94,22 +103,22 @@
     }
     .progress {
       font-size: 14px;
-      color: #7a8194;
+      color: #9aa1b4;
       font-weight: 500;
     }
     /* ===== Countdown timer ===== */
     .timer {
       font-size: 14px;
       font-weight: 600;
-      color: #4f6ef7;
-      background: #eef1fe;
+      color: #8fa3ff;
+      background: rgba(79, 110, 247, 0.16);
       padding: 4px 12px;
       border-radius: 999px;
     }
     /* Turn red when time is running low */
     .timer.low {
-      color: #9c2c2c;
-      background: #fdeaea;
+      color: #ff8585;
+      background: rgba(224, 86, 86, 0.16);
     }
 
     /* ===== The question text ===== */
@@ -129,9 +138,10 @@
     .option {
       text-align: left;
       padding: 14px 16px;
-      border: 2px solid #e3e7f0;
+      border: 2px solid #2a2f3c;
       border-radius: 10px;
-      background: #fff;
+      background: #1d212c;
+      color: #e6e8ef;
       font-size: 15px;
       font-family: inherit;
       cursor: pointer;
@@ -142,14 +152,14 @@
     }
     /* Colors shown after the user picks an answer */
     .option.correct {
-      background: #e6f7ec;
+      background: rgba(54, 179, 126, 0.16);
       border-color: #36b37e;
-      color: #1b6b46;
+      color: #7ee0ad;
     }
     .option.wrong {
-      background: #fdeaea;
+      background: rgba(224, 86, 86, 0.16);
       border-color: #e05656;
-      color: #9c2c2c;
+      color: #ff9a9a;
     }
     /* Disabled buttons should not look clickable */
     .option:disabled {
@@ -179,10 +189,10 @@
       margin-top: 22px;
       width: 100%;
       padding: 14px;
-      border: 2px solid #c7cdda;
+      border: 2px solid #3a3f4d;
       border-radius: 10px;
-      background: #fff;
-      color: #7a8194;
+      background: transparent;
+      color: #9aa1b4;
       font-size: 16px;
       font-weight: 600;
       font-family: inherit;
@@ -209,7 +219,7 @@
       margin: 10px 0;
     }
     .result p {
-      color: #7a8194;
+      color: #9aa1b4;
       margin-bottom: 22px;
     }
 
@@ -221,10 +231,10 @@
     .review h3 {
       font-size: 16px;
       margin-bottom: 12px;
-      color: #1f2430;
+      color: #e6e8ef;
     }
     .review-item {
-      border: 2px solid #e3e7f0;
+      border: 2px solid #2a2f3c;
       border-radius: 10px;
       padding: 12px 14px;
       margin-bottom: 10px;
@@ -243,20 +253,20 @@
       margin-bottom: 8px;
     }
     .tag.skipped {
-      background: #fff4e0;
-      color: #9c6a1c;
+      background: rgba(214, 158, 46, 0.18);
+      color: #e8b860;
     }
     .tag.wrong-tag {
-      background: #fdeaea;
-      color: #9c2c2c;
+      background: rgba(224, 86, 86, 0.18);
+      color: #ff9a9a;
     }
     .review-item .line {
       font-size: 13px;
-      color: #7a8194;
+      color: #9aa1b4;
       margin-top: 2px;
     }
     .review-item .line b {
-      color: #1f2430;
+      color: #e6e8ef;
     }
 
     /* Helper class to hide sections we are not using right now */
