@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daylist — Personal To-Do</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <div class="header-text">
+        <p class="eyebrow">Personal board</p>
+        <h1>Daylist</h1>
+      </div>
+      <div class="counter" id="counter" aria-live="polite">
+        <span class="counter-num" id="counterOpen">0</span>
+        <span class="counter-label">open</span>
+      </div>
+    </header>
+
+    <!-- Add task -->
+    <div class="composer">
+      <input
+        type="text"
+        id="taskInput"
+        placeholder="What needs doing?"
+        autocomplete="off"
+        maxlength="200"
+        aria-label="New task"
+      />
+      <button id="addBtn" type="button">Add task</button>
+    </div>
+
+    <!-- Status / error banner -->
+    <div class="banner" id="banner" hidden></div>
+
+    <!-- Task list -->
+    <section class="list-wrap" aria-label="Task list">
+      <ul class="task-list" id="taskList"></ul>
+      <div class="empty" id="emptyState" hidden>
+        <p>Nothing here yet.</p>
+        <p class="empty-sub">Add your first task above — it syncs straight to your CAP service.</p>
+      </div>
+      <div class="loading" id="loadingState">
+        <span class="spinner" aria-hidden="true"></span> Loading tasks…
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
